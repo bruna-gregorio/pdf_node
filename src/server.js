@@ -1,5 +1,6 @@
 const express = require('express')
 const ejs = require('ejs')
+const pdf = require('html-pdf')
 const path = require('path')
 
 const app = express()
@@ -25,12 +26,32 @@ const passengers = [
 app.get('/', (req, res) => {
 
   const filePath = path.join(__dirname, "print.ejs")
-  ejs.renderFile(filePath, { passengers }, (err, data) => {
+  ejs.renderFile(filePath, { passengers }, (err, html) => {
     if (err) {
       return res.send('Erro na leitura de arquivo')
-
     }
-    return res.send(data)
+
+    const options = {
+      height: "11.25in",
+      width: "8.5in",
+      header: {
+        height: "20mm"
+      },
+      footer: {
+        height: "20mm"
+      }
+    }
+
+    // criar o pdf
+    pdf.create(html, options).toFile("report.pdf", (err, data) => {
+      if (err) {
+        return res.send("Erro ao gerar pdf")
+      }
+
+      // enviar para o navegador
+      return res.send("Arquivo gerado com sucesso")
+    })
+
   })
 })
 
