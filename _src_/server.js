@@ -1,7 +1,7 @@
 const express = require('express')
 const ejs = require('ejs')
+const pdf = require('html-pdf')
 const path = require('path')
-const pupperteer = require('puppeteer')
 
 const app = express()
 
@@ -23,32 +23,6 @@ const passengers = [
   }
 ]
 
-app.get('/pdf', async (req, res) => {
-  const browser = await pupperteer.launch()
-  const page = await browser.newPage()
-
-  await page.goto('http://localhost:3333', {
-    waitUntil: 'networkidle0'
-  })
-
-  const pdf = await page.pdf({
-    printBackground: true,
-    format: 'letter',
-    margin: {
-      top: "20px",
-      bottom: "40px",
-      left: "20px",
-      right: "20px"
-    }
-  })
-
-  await browser.close()
-
-  res.contentType('application/pdf')
-
-  return res.send(pdf)
-})
-
 app.get('/', (req, res) => {
 
   const filePath = path.join(__dirname, "print.ejs")
@@ -57,8 +31,26 @@ app.get('/', (req, res) => {
       return res.send('Erro na leitura de arquivo')
     }
 
-    // enviar para o navegador
-    return res.send(html)
+    const options = {
+      height: "11.25in",
+      width: "8.5in",
+      header: {
+        height: "20mm"
+      },
+      footer: {
+        height: "20mm"
+      }
+    }
+
+    // criar o pdf
+    pdf.create(html, options).toFile("report.pdf", (err, data) => {
+      if (err) {
+        return res.send("Erro ao gerar pdf")
+      }
+
+      // enviar para o navegador
+      return res.send("Arquivo gerado com sucesso")
+    })
 
   })
 })
